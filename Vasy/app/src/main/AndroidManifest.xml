@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.github.danpatpang.vasy">
-    <!--인터넷 연결 허용 퍼미션-->
-    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- 인터넷 연결 허용 퍼미션 -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -18,6 +19,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!--액티비티를 추가할 때마다 생성해야함-->
+        <activity android:name=".SubActivity"></activity>
     </application>
 
 </manifest>
