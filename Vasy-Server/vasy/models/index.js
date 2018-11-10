@@ -13,23 +13,32 @@ var pool = mysql.createPool({
     queueLimit: 0
 });
 
-const db = {};
+// 보안 필요...
+// console.log(pool)의 경우 config 데이터 모두 출력...
 
-// async await 변환 필요...
-pool.getConnection((err, conn) => {
-    conn.query("show databases", (err, results, fields) => {
-        if (!err) {
-            console.log('testing');
-            db.result = JSON.stringify(results);
-        } else {
-            console.error(err);
-        }
-        // 커넥션 반납
-        if (conn != null) {
-            pool.releaseConnection(conn);
-        }
-    });
-});
-
-// 동기화된 결과를 보내야함.
-module.exports = db;
+// 테이블 명도 숨겨야 할까?
+module.exports = {
+    selectLocalUser: (nickname, callback) => {
+        pool.getConnection((err, con) => {
+            var sql = `SELECT nickname, password FROM user_info WHERE nickname = ?`;
+            con.query(sql, nickname, (err, result, fields) => {
+                con.release();
+                // 서버 에러.
+                if (err) {
+                    return callback("server error");
+                }
+                // 데이터 검색 결과 없음.
+                if (result.length === 0) {
+                    return callback("unregistered ID");
+                }
+                // 데이터가 존재.
+                else {
+                    const data = {};
+                    data.nickname = result[0].nickname;
+                    data.password = result[0].password;
+                    callback(null, data);
+                }
+            });
+        });
+    }
+};
