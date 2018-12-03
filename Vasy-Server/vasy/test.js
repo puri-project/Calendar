@@ -3,17 +3,9 @@ const handlebars = require('express-handlebars');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
-const passport = require('passport');
-const passportConfig = require('./passport');
-const flash = require('connect-flash');
 require('dotenv').config();
 
 const vasy = express();
-passportConfig(passport);
-
-// 라우터 추가
-const loginRouter = require('./routes/login');
-const registerRouter = require('./routes/register');
 
 // view engine, static 및 port 설정
 vasy.set('port', process.env.PORT || 3000)
@@ -36,26 +28,41 @@ vasy.use(express.json())
         }
     }));
 
-// 모듈 활성화
-vasy.use(flash())
-    .use(passport.initialize())
-    .use(passport.session());
+vasy.get('/b', (req, res, next) => {
+    console.log(1);
+    next();
+});
 
-// 라우터 연결
-vasy.use('/', loginRouter);
-vasy.use('/signup', registerRouter);
+vasy.use((req, res, next) => {
+    console.log(2);
+    next();
+});
+
+vasy.get('/b', (req, res, next) => {
+    console.log(3);
+    throw new Error('b');
+});
+
+vasy.use('/b', (err, req, res, next) => {
+    console.log(4);
+    next(err);
+});
+
+vasy.get('/c', (err, req) => {
+    console.log(5);
+    throw new Error('c');
+});
+
 
 // catch 404 and forward to error handler
-vasy.use(function (req, res, next) {
-    next(createError(404));
+vasy.use(function (req, res) {
+    console.log(404);
+    // next(createError(404));
 });
 
 // error handler
 vasy.use(function (err, req, res, next) {
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
-    res.status(err.status || 500);
-    res.render('error');
+    console.log(500);
 });
 
 vasy.listen(vasy.get('port'), () => {

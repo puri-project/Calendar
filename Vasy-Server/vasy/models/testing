@@ -1,0 +1,8 @@
+const DB = require('./index');
+
+DB.insertLocalUser((err, result) => {
+    if(err) {
+        return console.log(err);
+    }
+    return console.log(result);
+}, {"name" : '감자', "email" : 'domino@naver.com', "password" : 'aaw123!'});
