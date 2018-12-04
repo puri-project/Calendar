@@ -2,6 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const bcrypt = require('bcrypt');
 const DB = require('../models');
+const tokenUtil = require('../utils')
 const {isLoggedIn, isNotLoggedIn} = require('./check-login-middlewares');
 
 var router = express.Router();
@@ -25,17 +26,40 @@ router.get('/', (req, res) => {
     res.render('home');
 });
 
-// 로그인 요청
+/**
+ * 로그인 요청
+ * 실패 시 check : false
+ * 성공 시 check : true, accessToken, refreshToken
+ */
 router.post('/signin', (req, res) => {
     DB.selectLocalUser(checkLogin, req.body.email);
 
     function checkLogin(err, user) {
+        // 결과로 보낼 객체
+        const result = {};
+
+        // 등록되지 않은 이메일 또는 서버 에러
         if (err) {
             console.log(err);
-            return res.json({"check": false});
+            result.check = false;
+
+            return res.json(result);
         }
 
-        return res.json({"check": bcrypt.compareSync(req.body.password, user.password)});
+        // 비밀번호 불일치
+        if(! bcrypt.compareSync(req.body.password, user.password)) {
+            result.check = false;
+            return res.json(result);
+        }
+
+        // 토큰 생성
+        var token = tokenUtil.TokenGenerator(req.body.email);
+
+        result.check = true;
+        result.accessToken = token.accessToken;
+        result.refreshToken = token.refreshToken;
+
+        res.json(result);
     }
 })
 
