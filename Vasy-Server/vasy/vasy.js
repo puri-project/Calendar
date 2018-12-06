@@ -13,7 +13,8 @@ passportConfig(passport);
 
 // 라우터 추가
 const loginRouter = require('./routes/login');
-const registerRouter = require('./routes/register');
+const servicesRouter = require('./routes/services');
+const analysisRouter = require('./routes/analysis')
 
 // view engine, static 및 port 설정
 vasy.set('port', process.env.PORT || 3000)
@@ -42,8 +43,10 @@ vasy.use(flash())
     .use(passport.session());
 
 // 라우터 연결
-vasy.use('/', loginRouter);
-vasy.use('/signup', registerRouter);
+vasy.use('/', loginRouter)
+    .use('/services', servicesRouter)
+    .use('/analysis', analysisRouter);
+
 
 // catch 404 and forward to error handler
 vasy.use(function (req, res, next) {

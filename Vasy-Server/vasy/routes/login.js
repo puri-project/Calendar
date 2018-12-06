@@ -8,89 +8,98 @@ const {isLoggedIn, isNotLoggedIn} = require('./check-login-middlewares');
 var router = express.Router();
 
 /**
- * user_info
- * +----------+--------------+------+-----+---------+----------------+
- * | Field    | Type         | Null | Key | Default | Extra          |
- * +----------+--------------+------+-----+---------+----------------+
- * | id       | int(11)      | NO   | PRI | NULL    | auto_increment |
- * | nickname | varchar(20)  | NO   |     | NULL    |                |
- * | email    | varchar(40)  | NO   | UNI | NULL    |                |
- * | password | varchar(100) | YES  |     | NULL    |                |
- * | provider | varchar(10)  | NO   |     | local   |                |
- * | sns_id   | varchar(30)  | YES  |     | NULL    |                |
- * +----------+--------------+------+-----+---------+----------------+
+ * login 페이지 요청
  */
-
-// login 페이지
 router.get('/', (req, res) => {
     res.render('home');
 });
 
 /**
- * 로그인 요청
- * 실패 시 check : false
- * 성공 시 check : true, accessToken, refreshToken
+ * login 요청
+ * 실패 - {check : false}
+ * 성공 - {check : true, accessToken, refreshToken}
  */
-router.post('/signin', (req, res) => {
+router.post('/login', (req, res) => {
     DB.selectLocalUser(checkLogin, req.body.email);
 
     function checkLogin(err, user) {
-        // 결과로 보낼 객체
         const result = {};
-
-        // 등록되지 않은 이메일 또는 서버 에러
-        if (err) {
+        if (err) {                  // 등록되지 않은 이메일 또는 서버 에러
             console.log(err);
             result.check = false;
-
             return res.json(result);
         }
 
-        // 비밀번호 불일치
-        if(! bcrypt.compareSync(req.body.password, user.password)) {
+        if (!bcrypt.compareSync(req.body.password, user.password)) {    // 비밀번호 불일치
             result.check = false;
             return res.json(result);
         }
 
-        // 토큰 생성
-        var token = tokenUtil.TokenGenerator(req.body.email);
+        var token = tokenUtil.TokenGenerator(req.body.email);   // token 생성
 
         result.check = true;
         result.accessToken = token.accessToken;
         result.refreshToken = token.refreshToken;
-
         res.json(result);
     }
-})
-
-// login 요청(passport)
-router.post('/login', isNotLoggedIn, (req, res, next) => {
-    // passport
-    passport.authenticate('local', (authError, user, info) => {
-        if (authError) {
-            console.log(authError);
-            return next(authError);
-        }
-        if (!user) {
-            // req.flash('Login Error', info.message);
-            return res.redirect('/');
-        }
-        return req.login(user, (loginError) => {
-            if (loginError) {
-                console.error(loginError);
-                return next(loginError);
-            } else {
-                // req.flash('Login', info.message);
-                return res.redirect('/');
-            }
-        });
-    })(req, res, next);
 });
 
-router.get('/logout', isLoggedIn, (req, res) => {
+/*
+ * register 요청
+ * 이메일 중복 검사 후 회원 가입 실행.
+ * {result : Boolean} 성공 - true / 실패, 에러 - false
+ */
+router.post('/register', (req, res) => {
+    DB.isLocalUser(isAvailableEmail, req.body.email);
+
+    function isAvailableEmail(err, result) {
+        if(err || !result) {
+            console.log(err);
+            return res.json({"result" : false});
+        }
+        DB.insertLocalUser(registerResult, req.body);
+    }
+
+    function registerResult(err, result){
+        if(err) {
+            console.log(err);
+            return res.json({"result" : false});
+        }
+        return res.json({"result" : result});
+    }
+});
+
+/**
+ * logout 요청 (사용 고민 중)
+ */
+router.post('/logout', isLoggedIn, (req, res) => {
     req.logout();
     req.session.destroy();
     res.redirect('/');
-});
+})
+
+// login 요청(passport)
+// router.post('/passport', isNotLoggedIn, (req, res, next) => {
+//     // passport
+//     passport.authenticate('local', (authError, user, info) => {
+//         if (authError) {
+//             console.log(authError);
+//             return next(authError);
+//         }
+//         if (!user) {
+//             // req.flash('Login Error', info.message);
+//             return res.redirect('/');
+//         }
+//         return req.login(user, (loginError) => {
+//             if (loginError) {
+//                 console.error(loginError);
+//                 return next(loginError);
+//             } else {
+//                 // req.flash('Login', info.message);
+//                 return res.redirect('/');
+//             }
+//         });
+//     })(req, res, next);
+// });
 
 module.exports = router;
